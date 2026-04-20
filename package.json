@@ -1,0 +1,28 @@
+{
+  "name": "@uncloned/uvs",
+  "version": "2.0.0",
+  "description": "Uncloned Verification Standard — provably fair game protocol",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./chacha20": "./src/chacha20.js",
+    "./hash": "./src/hash.js",
+    "./canonical": "./src/canonical.js",
+    "./seed": "./src/seed.js",
+    "./session": "./src/session.js",
+    "./audit": "./src/audit.js",
+    "./version": "./src/version.js"
+  },
+  "scripts": {
+    "test": "node test/vectors.test.js"
+  },
+  "keywords": ["provably-fair", "verification", "chacha20", "gaming", "rng", "deterministic"],
+  "author": "Constantin Razinsky <constr@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/constarik/uvs-sdk"
+  },
+  "homepage": "https://uncloned.work",
+  "files": ["src/", "README.md", "LICENSE"]
+}
