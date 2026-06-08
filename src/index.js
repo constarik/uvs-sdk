@@ -1,6 +1,9 @@
 /**
- * @uncloned/uvs — Uncloned Verification Standard v2
- * Provably fair game protocol SDK.
+ * @constarik/uvs-sdk — Uncloned Verification Standard v3
+ *
+ * One primitive, two branches:
+ *   uvGame    — interactive games (ChaCha20 keystream, commit-reveal, sessions).
+ *   uvLottery — verifiable draws (seeded permutation + drand).
  *
  * https://github.com/constarik/uvs
  * https://uncloned.work
@@ -15,29 +18,26 @@ const { commit, deriveCombinedSeed, createRng, verify, generate, sessionId } = r
 const { UvsSession, STATES } = require('./session');
 const { stateHash, createHeader, createStep, verifyStep, toJSONL, fromJSONL } = require('./audit');
 const { negotiate } = require('./version');
+const lottery = require('./lottery');
+const drand = require('./drand');
 
 module.exports = {
-  // Core PRNG
-  ChaCha20,
-
-  // Hashing
+  // ── Core / shared ──
   sha256, sha512, randomHex, generateServerSeed,
-
-  // Canonical JSON
   canonicalJSON,
-
-  // Seed protocol
-  commit, deriveCombinedSeed, createRng, verify, generate, sessionId,
-
-  // Session management
-  UvsSession, STATES,
-
-  // Audit trail
-  stateHash, createHeader, createStep, verifyStep, toJSONL, fromJSONL,
-
-  // Version negotiation
   negotiate,
 
-  // Protocol version
-  UVS_VERSION: 2
+  // ── uvGame (interactive games) ──
+  ChaCha20,
+  commit, deriveCombinedSeed, createRng, verify, generate, sessionId,
+  UvsSession, STATES,
+  stateHash, createHeader, createStep, verifyStep, toJSONL, fromJSONL,
+
+  // ── uvLottery (verifiable draws) ──
+  // grouped to avoid name collisions (e.g. lottery.combinedSeed vs deriveCombinedSeed)
+  lottery,   // { combinedSeed, score, permute, allocate, lookup, poolOf, verifyDraw }
+  drand,     // { QUICKNET, roundAt, timeOfRound, futureRound, randomnessOf, fetchRound }
+
+  // ── Protocol version ──
+  UVS_VERSION: 3
 };

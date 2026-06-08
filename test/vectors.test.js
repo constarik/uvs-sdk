@@ -1,5 +1,5 @@
 /**
- * @uncloned/uvs — Test Vector Verification
+ * @constarik/uvs-sdk — Test Vector Verification
  * Verifies all published UVS v1/v2 test vectors against the SDK.
  */
 
@@ -31,7 +31,7 @@ function check(label, actual, expected) {
   }
 }
 
-console.log('\n══ @uncloned/uvs v2 — Test Vector Verification ══\n');
+console.log('\n══ @constarik/uvs-sdk v3 — Test Vector Verification ══\n');
 
 // ── 1. serverSeedHash ──
 console.log('1. serverSeedHash (SHA-256):');

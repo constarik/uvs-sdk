@@ -1,148 +1,106 @@
-# @uncloned/uvs
+# @constarik/uvs-sdk
 
-**Uncloned Verification Standard v2** — provably fair game protocol SDK.
+**Uncloned Verification Standard v3** — provably fair by mathematics, not by trust.
 
-Specification: [github.com/constarik/uvs](https://github.com/constarik/uvs)  
-Author: [uncloned.work](https://uncloned.work)
+One primitive, two branches, in one small dependency-free library:
+
+- **uvLottery** — verifiable draws (lotteries, gacha, raffles, allocations): one seeded permutation anyone can recompute, sealed by a public **drand** round.
+- **uvGame** — interactive games: ChaCha20 keystream, commit-reveal, sessions, audit trail.
+
+Standard: [github.com/constarik/uvs](https://github.com/constarik/uvs) · Site: [uncloned.work](https://uncloned.work)
 
 ## Install
 
-```bash
-npm install @uncloned/uvs
-```
-
-## Quick Start
-
-### Stateless Game (slot, dice, crash)
-
-```js
-const { UvsSession } = require('@uncloned/uvs');
-
-// Server generates seed and commitment
-const session = UvsSession.stateless({
-  serverSeed: 'deadbeef...', // 64+ hex chars
-  clientSeed: 'player_seed_42',
-  nonce: 1,
-  params: { game: 'dice', sides: 6 }
-});
-
-// Use the built-in ChaCha20 RNG
-const outcome = session.rng.nextInt(1, 6);
-
-// Record the step
-session.recordStep(null, { outcome }, { balance: 900, step: 1 });
-
-// Reveal seed and get audit trail
-const trail = session.reveal();
-```
-
-### Move Batch (single-player arcade, G=ALL)
-
-```js
-const session = UvsSession.moveBatch({
-  serverSeed, clientSeed, nonce: 1,
-  params: { game: 'erosion', gridSize: 6 }
-});
-
-// Player makes moves
-session.recordMove({ col: 3 }, { eroded: [0,1,2] }, gameState);
-session.recordMove({ col: 5 }, { eroded: [3,4] }, gameState);
-
-const trail = session.reveal();
-```
-
-### Move Sync (multiplayer, G=1)
-
-```js
-const session = UvsSession.moveSync({
-  serverSeed, clientSeed, nonce: 1,
-  players: ['alice', 'bob'],
-  params: { game: 'soiron' }
-});
-
-session.recordTick(
-  { alice: { col: 2 }, bob: { col: 5 } },
-  { eroded: { alice: [0,1], bob: [3,4] } },
-  gameState
-);
-
-const trail = session.reveal();
-```
-
-### Verification
-
-```js
-const { UvsSession } = require('@uncloned/uvs');
-
-// Verify seed commitment
-UvsSession.verifySeed(trail.serverSeed, trail.header.serverSeedHash);
-// → true
-
-// Full replay verification
-const result = UvsSession.replay(trail, (rng, params, step, input) => {
-  // Re-run your game engine with the same RNG
-  const outcome = myEngine(rng, params, input);
-  return { output: outcome, state: computeState(outcome) };
-});
-// → { valid: true }
-```
-
-## API
-
-### ChaCha20
-
-```js
-const { ChaCha20 } = require('@uncloned/uvs');
-const rng = ChaCha20.fromCombinedSeed(hexSeed);
-
-rng.nextUint32();     // 0..4294967295
-rng.nextFloat();      // [0, 1)
-rng.nextInt(1, 6);    // 1..6
-rng.nextIndex(10);    // 0..9
-rng.calls;            // total consumed
-```
-
-### Seed Protocol
-
-```js
-const { commit, verify, deriveCombinedSeed, createRng, generate } = require('@uncloned/uvs');
-
-const { serverSeed, serverSeedHash } = generate();
-const combined = deriveCombinedSeed(serverSeed, clientSeed, nonce);
-const rng = createRng(serverSeed, clientSeed, nonce);
-const ok = verify(serverSeed, serverSeedHash);
-```
-
-### Audit Trail
-
-```js
-const { stateHash, toJSONL, fromJSONL } = require('@uncloned/uvs');
-
-const hash = stateHash({ balance: 900, step: 1 });
-const jsonl = session.toJSONL();
-const { header, steps } = fromJSONL(jsonl);
-```
-
-### Version Negotiation
-
-```js
-const { negotiate } = require('@uncloned/uvs');
-
-negotiate([1, 2], [2, 3]);
-// → { accepted: true, negotiated: 2 }
-
-negotiate([1], [2, 3]);
-// → { accepted: false, clientVersions: [1], serverVersions: [2, 3] }
-```
-
-## Test Vectors
+Published to GitHub Packages. Add the scope registry once, then install:
 
 ```bash
-npm test
+echo "@constarik:registry=https://npm.pkg.github.com" >> .npmrc
+npm install @constarik/uvs-sdk
 ```
 
-Runs all test vectors from the UVS specification.
+## uvLottery — verify a draw
+
+A draw is one operation: `combinedSeed = SHA-256(serverSeed : drandRandomness)`, then
+each entry's `score = SHA-256(combinedSeed : id)`, sorted high→low, with the published
+pool dealt onto that order.
+
+```js
+const { lottery } = require('@constarik/uvs-sdk');
+
+const record = {
+  serverSeed: 'a1b2c3…',                       // committed before the draw, revealed after
+  drand: { round: 29286636, randomness: 'e8d0…' }, // a public drand round (re-fetchable)
+  participants: ['TICKET-0001', 'TICKET-0002', /* … */],
+  winners: 5, prizeLabel: 'SEAT'               // or an explicit prizes: [...] pool
+};
+
+const { combinedSeed, result } = lottery.verifyDraw(record);
+// result: [{ rank, id, prize, score }, …] — same on any machine, in any language.
+
+// or check just one entry, no sort:
+lottery.lookup(record.participants, combinedSeed, 'TICKET-0002', lottery.poolOf(record));
+// → { id, present, rank, prize, score }
+```
+
+This reproduces [`verifiers/test-vectors.json`](https://github.com/constarik/uvs/tree/master/verifiers) byte-for-byte (combined `32ca5bd0…`, winners `TICKET-0002, 0012, 0001, 0005, 0006`).
+
+## drand (the randomness source)
+
+```js
+const { drand } = require('@constarik/uvs-sdk');
+
+const now = Math.floor(Date.now() / 1000);
+const fr  = drand.futureRound(now, 9);          // a round that hasn't happened yet (anti-grind)
+const r   = await drand.fetchRound(fr.round);   // { round, signature, randomness, time }
+// commit the round before it publishes; derive the seed from r.randomness after.
+```
+
+`drand.QUICKNET` carries the beacon parameters (chainHash, period 3 s, genesis). Fetch
+is optional — pass `{ fetch }` or rely on global `fetch` (Node 18+).
+
+## uvGame — commit-reveal + deterministic RNG
+
+```js
+const { commit, deriveCombinedSeed, ChaCha20, UvsSession } = require('@constarik/uvs-sdk');
+
+const { serverSeedHash } = commit(serverSeed);                  // publish before play
+const combined = deriveCombinedSeed(serverSeed, clientSeed, nonce); // SHA-512
+const rng = ChaCha20.fromCombinedSeed(combined);               // RFC 8439 keystream
+```
+
+`UvsSession`, `stateHash`, `canonicalJSON`, and `negotiate` (version negotiation) round out the game side.
+
+## Modules
+
+| Import | What |
+|---|---|
+| `@constarik/uvs-sdk/lottery` | uvLottery draw: `combinedSeed · score · permute · allocate · lookup · poolOf · verifyDraw` |
+| `@constarik/uvs-sdk/drand` | beacon helpers: `QUICKNET · roundAt · timeOfRound · futureRound · randomnessOf · fetchRound` |
+| `@constarik/uvs-sdk/hash` | `sha256 · sha512 · randomHex · generateServerSeed` |
+| `@constarik/uvs-sdk/canonical` | `canonicalJSON` |
+| `@constarik/uvs-sdk/seed` | commit-reveal + combined-seed derivation |
+| `@constarik/uvs-sdk/session` | `UvsSession` lifecycle |
+| `@constarik/uvs-sdk/audit` | audit-trail records |
+| `@constarik/uvs-sdk/chacha20` | ChaCha20 (RFC 8439) |
+| `@constarik/uvs-sdk/version` | integer-set version negotiation |
+
+## Conformance
+
+```bash
+npm test          # v2 game vectors + uvLottery draw vector — all green
+```
+
+Any implementation, in any language, that reproduces these vectors is UVS-conformant.
+
+## Scope
+
+This package is the **protocol primitives library**. The composable server host
+(Express routes, registrar/storage/anchor modules, game plugins) and the live
+reference implementations (PADDLA, Run-a-draw, Registrar) live in the main repo:
+[github.com/constarik/uvs](https://github.com/constarik/uvs).
+
+The protocol is the product; this SDK is one of potentially many implementations.
 
 ## License
 
-MIT
+MIT.
