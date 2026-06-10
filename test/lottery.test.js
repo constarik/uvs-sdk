@@ -54,6 +54,11 @@ check('roundAt(genesis) = 1', drand.roundAt(drand.QUICKNET.genesis), 1);
 check('timeOfRound(1) = genesis', drand.timeOfRound(1), drand.QUICKNET.genesis);
 check('futureRound is ahead of now', drand.futureRound(Math.floor(Date.now() / 1000), 9).round > drand.roundAt(Math.floor(Date.now() / 1000)), true);
 
+// 6. duplicate-id rejection (uvLs §3.1)
+let dupRejected = false;
+try { lottery.allocate(['A', 'B', 'A'], combined, ['X']); } catch (e) { dupRejected = /duplicate/i.test(e.message); }
+check('duplicate participant ids rejected (uvLs §3.1)', dupRejected, true);
+
 console.log('\n══ Summary ══');
 console.log('  Passed: ' + passed + '   Failed: ' + failed);
 console.log(failed === 0 ? '\n  ✓ ALL uvLottery VECTORS PASS\n' : '\n  ✗ FAILURES\n');

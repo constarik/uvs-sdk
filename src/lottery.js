@@ -26,6 +26,12 @@ function score(combined, id) {
   return sha256(combined + ':' + id);
 }
 
+/** uvLs §3.1: participant ids MUST be unique — a duplicate breaks the total order. Reject. */
+function requireUnique(participants) {
+  if (new Set(participants).size !== participants.length)
+    throw new Error('INVALID: duplicate participant ids — record rejected (uvLs §3.1)');
+}
+
 // deterministic total order: highest score first, ties broken by id ascending
 function _cmp(a, b) {
   if (a.score > b.score) return -1;
@@ -35,6 +41,7 @@ function _cmp(a, b) {
 
 /** Full permutation: [{ id, score }], highest score first (ties: id asc). */
 function permute(participants, combined) {
+  requireUnique(participants);
   return participants.map(id => ({ id, score: score(combined, id) })).sort(_cmp);
 }
 
@@ -50,6 +57,7 @@ function allocate(participants, combined, prizes) {
 
 /** Single lookup — O(M) hashing, no sort (a participant checks only their own id). */
 function lookup(participants, combined, id, prizes) {
+  requireUnique(participants);
   const me = score(combined, id);
   let higher = 0, present = false;
   for (const a of participants) {
@@ -94,4 +102,4 @@ function verifyDraw(record) {
   return { combinedSeed: cs, prizes, result };
 }
 
-module.exports = { combinedSeed, score, permute, allocate, lookup, poolOf, verifyDraw };
+module.exports = { combinedSeed, score, requireUnique, permute, allocate, lookup, poolOf, verifyDraw };
