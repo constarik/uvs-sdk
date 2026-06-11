@@ -21,12 +21,9 @@
   "keywords": ["provably-fair", "verification", "lottery", "draw", "gacha", "drand", "chacha20", "gaming", "rng", "deterministic"],
   "author": "Constantin Razinsky <constr@gmail.com>",
   "license": "MIT",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/constarik/uvs-sdk"
+    "url": "git+https://github.com/constarik/uvs-sdk.git"
   },
   "homepage": "https://uncloned.work",
   "files": ["src/", "README.md", "LICENSE"]
