@@ -1,6 +1,6 @@
 {
   "name": "@constarik/uvs-sdk",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Uncloned Verification Standard v3 — provably fair draws (uvLottery) and games (uvGame)",
   "main": "src/index.js",
   "exports": {

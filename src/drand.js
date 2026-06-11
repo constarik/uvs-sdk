@@ -34,6 +34,24 @@ function futureRound(unixNow, aheadSeconds = 9, info = QUICKNET) {
   return { round, time: timeOfRound(round, info) };
 }
 
+/**
+ * §5.4.1 derived-R rule: the round bound to a draw is the FIRST round strictly AFTER the proven
+ * timestamp `genTime`. Then `genTime < timeOfRound(R)` holds by construction and R is not the
+ * operator's choice (nothing to grind). With two TSAs, pass the LATEST token's genTime (max).
+ * @returns {{ round:number, time:number }}
+ */
+function roundAfter(genTime, info = QUICKNET) {
+  const round = roundAt(genTime, info) + 1;
+  return { round, time: timeOfRound(round, info) };
+}
+
+/** Verify a derived-R record's ordering: R == roundAt(genTime)+1 AND genTime < timeOfRound(R). */
+function checkAnchorRound(genTime, round, info = QUICKNET) {
+  const expectedRound = roundAt(genTime, info) + 1;
+  const roundTime = timeOfRound(round, info);
+  return { ok: round === expectedRound && genTime < roundTime, expectedRound, roundTime, genBeforeRound: genTime < roundTime };
+}
+
 /** randomness = SHA-256(signature bytes). drand also returns `randomness` directly. */
 function randomnessOf(signatureHex) {
   return sha256(Buffer.from(signatureHex, 'hex'));
@@ -58,4 +76,4 @@ async function fetchRound(round, opts = {}) {
   };
 }
 
-module.exports = { QUICKNET, roundAt, timeOfRound, futureRound, randomnessOf, fetchRound };
+module.exports = { QUICKNET, roundAt, timeOfRound, futureRound, roundAfter, checkAnchorRound, randomnessOf, fetchRound };

@@ -36,7 +36,7 @@ module.exports = {
   // ── uvLottery (verifiable draws) ──
   // grouped to avoid name collisions (e.g. lottery.combinedSeed vs deriveCombinedSeed)
   lottery,   // { combinedSeed, score, permute, allocate, lookup, poolOf, verifyDraw }
-  drand,     // { QUICKNET, roundAt, timeOfRound, futureRound, randomnessOf, fetchRound }
+  drand,     // { QUICKNET, roundAt, timeOfRound, futureRound, roundAfter, checkAnchorRound, randomnessOf, fetchRound }
 
   // ── Protocol version ──
   UVS_VERSION: 3
