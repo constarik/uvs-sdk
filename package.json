@@ -1,6 +1,6 @@
 {
   "name": "@constarik/uvs-sdk",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Uncloned Verification Standard v3 — provably fair draws (uvLottery) and games (uvGame)",
   "main": "src/index.js",
   "exports": {
@@ -18,7 +18,18 @@
   "scripts": {
     "test": "node test/vectors.test.js && node test/lottery.test.js"
   },
-  "keywords": ["provably-fair", "verification", "lottery", "draw", "gacha", "drand", "chacha20", "gaming", "rng", "deterministic"],
+  "keywords": [
+    "provably-fair",
+    "verification",
+    "lottery",
+    "draw",
+    "gacha",
+    "drand",
+    "chacha20",
+    "gaming",
+    "rng",
+    "deterministic"
+  ],
   "author": "Constantin Razinsky <constr@gmail.com>",
   "license": "MIT",
   "repository": {
@@ -26,5 +37,9 @@
     "url": "git+https://github.com/constarik/uvs-sdk.git"
   },
   "homepage": "https://uncloned.work",
-  "files": ["src/", "README.md", "LICENSE"]
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ]
 }
